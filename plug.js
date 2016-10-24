@@ -105,9 +105,8 @@ const expressionVisitor = {
 				left: {},
 				right: {},
 			};
-			// TODO: we need to traverse just the right and left nodes
-			//path.node.left.traverse( expressionVisitor, { currentExpression: node, prop: 'left' } );
-			//path.node.right.traverse( expressionVisitor, { currentExpression: node, prop: 'right' } );
+			path.get( 'left' ).traverse( expressionVisitor, { currentExpression: node, prop: 'left' } );
+			path.get( 'right' ).traverse( expressionVisitor, { currentExpression: node, prop: 'right' } );
 			this.currentExpression[ this.prop ] = node;
 		},
 	},
