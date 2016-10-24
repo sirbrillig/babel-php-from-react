@@ -1,0 +1,29 @@
+{
+  "name": "babel-plugin-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "babel-cli": "^6.16.0",
+    "babel-core": "^6.17.0",
+    "babel-generator": "^6.17.0",
+    "babel-plugin-transform-es2015-destructuring": "^6.16.0",
+    "babel-plugin-transform-react-jsx": "^6.8.0",
+    "babel-traverse": "^6.16.0",
+    "babel-types": "^6.16.0",
+    "babylon": "^6.12.0"
+  },
+  "eslintConfig": {
+    "extends": "wpcalypso/react",
+		"rules": {
+			"wpcalypso/jsx-classname-namespace": 0,
+			"max-len": 0,
+			"no-console": 0
+		}
+	}
+}
