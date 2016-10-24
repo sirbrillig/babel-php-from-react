@@ -96,45 +96,59 @@ function outputNode( node ) {
 	console.log( generated, '\n' );
 }
 
-const expressionVisitor = {
-	LogicalExpression: {
-		enter( path ) {
+const getExpressionVisitor = function() {
+	return {
+		LogicalExpression: {
+			enter( path ) {
+				const node = {
+					type: 'LogicalExpression',
+					operator: path.node.operator,
+					left: {},
+					right: {},
+				};
+				console.log( 'LogicalExpression 1', node );
+				path.get( 'left' ).traverse( getExpressionVisitor(), { currentExpression: node, prop: 'left' } );
+				console.log( 'LogicalExpression 2', node );
+				path.get( 'right' ).traverse( getExpressionVisitor(), { currentExpression: node, prop: 'right' } );
+				console.log( 'LogicalExpression 3', node );
+				this.currentExpression[ this.prop ] = node;
+				this.traverseComplete = true; // TODO: path.stop probably does the same thing
+			},
+		},
+
+		StringLiteral( path ) {
+			if ( this.traverseComplete ) {
+				return;
+			}
 			const node = {
-				type: 'LogicalExpression',
-				operator: path.node.operator,
-				left: {},
-				right: {},
+				type: 'StringLiteral',
+				value: path.node.value,
 			};
-			path.get( 'left' ).traverse( expressionVisitor, { currentExpression: node, prop: 'left' } );
-			path.get( 'right' ).traverse( expressionVisitor, { currentExpression: node, prop: 'right' } );
+			console.log( 'StringLiteral', node );
 			this.currentExpression[ this.prop ] = node;
 		},
-	},
 
-	StringLiteral( path ) {
-		const node = {
-			type: 'StringLiteral',
-			value: path.node.value,
-		};
-		this.currentExpression[ this.prop ] = node;
-	},
-
-	MemberExpression( path ) {
-		const node = {
-			type: 'MemberExpression',
-			object: {
-				type: 'Identifier',
-				kind: 'variable',
-				name: path.node.object.name
-			},
-			property: {
-				type: 'Identifier',
-				kind: 'property',
-				name: path.node.property.name
-			},
-		};
-		this.currentExpression[ this.prop ] = node;
-	},
+		MemberExpression( path ) {
+			if ( this.traverseComplete ) {
+				return;
+			}
+			const node = {
+				type: 'MemberExpression',
+				object: {
+					type: 'Identifier',
+					kind: 'variable',
+					name: path.node.object.name
+				},
+				property: {
+					type: 'Identifier',
+					kind: 'property',
+					name: path.node.property.name
+				},
+			};
+			console.log( 'MemberExpression', node );
+			this.currentExpression[ this.prop ] = node;
+		},
+	};
 };
 
 module.exports = function() {
@@ -224,7 +238,7 @@ module.exports = function() {
 						init: {},
 					};
 					addToCurrentNode( node );
-					path.traverse( expressionVisitor, { currentExpression: node, prop: 'init' } );
+					path.traverse( getExpressionVisitor(), { currentExpression: node, prop: 'init' } );
 				}
 			},
 		}
