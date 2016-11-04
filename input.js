@@ -1,23 +1,20 @@
-import React, { Component } from 'react';
+import React from 'react';
 
-class TextWidget extends Component {
-	render() {
-		const text = this.props.text || 'This is a text widget with no data!';
-		const className = this.props.className || '';
-		return (
-			<div className={ className }>
-				{ text }
-			</div>
-		);
-	}
-}
+const SearchWidget = ( { placeholder, className } ) => {
+	return (
+		<div className={ className }>
+			<input className="SearchWidget__input" placeholder={ placeholder || 'search this site' } />
+		</div>
+	);
+};
 
-TextWidget.description = 'A block of text or html.';
-TextWidget.editableProps = {
-	text: {
+SearchWidget.description = 'A search field.';
+SearchWidget.editableProps = {
+	placeholder: {
 		type: 'string',
-		label: 'The text to display.'
+		label: 'The placeholder text for the search field.'
 	}
 };
 
-export default TextWidget;
+export default SearchWidget;
+

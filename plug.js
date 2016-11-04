@@ -1,5 +1,6 @@
 /* global module, console */
 let destructuredProperties = null;
+let functionName = null;
 
 function generatePhp( node ) {
 	console.log( 'processing node', node.type );
@@ -20,7 +21,8 @@ function generatePhp( node ) {
 			code += '$props';
 			break;
 		case 'ArrowFunctionExpression':
-			code += `function(${ node.params.map( generatePhp ).join( ',' ) })`;
+			code += `function${ functionName ? ' ' + functionName : '' }(${ node.params.map( generatePhp ).join( ',' ) })`;
+			functionName = null;
 			break;
 		case 'ClassBody':
 		case 'BlockStatement':
@@ -41,6 +43,12 @@ function generatePhp( node ) {
 			}
 			break;
 		case 'VariableDeclarator':
+			if ( node.init && node.init.type === 'ArrowFunctionExpression' ) {
+				node.id.phpKind = null;
+				functionName = generatePhp( node.id );
+				code += generatePhp( node.init );
+				break;
+			}
 			code += generatePhp( node.id );
 			code += ' = ';
 			if ( node.init ) {
