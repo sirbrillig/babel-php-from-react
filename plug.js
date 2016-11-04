@@ -28,7 +28,10 @@ function generatePhp( node ) {
 		case 'BlockStatement':
 			code += ' {\n';
 			if ( destructuredProperties ) {
-				code += destructuredProperties.map( property => `${ generatePhp( property.value ) } = $props->${ generatePhp( property.key ) };\n` ).join( '' );
+				code += destructuredProperties.map( property => {
+					const key = generatePhp( property.key );
+					return `${ generatePhp( property.value ) } = isset( $props->${ key } ) ? $props->${ key } : '';\n`;
+				} ).join( '' );
 				destructuredProperties = null;
 			}
 			break;
@@ -80,7 +83,7 @@ function generatePhp( node ) {
 				if ( node.left.type === 'Identifier' && ! node.left.phpKind ) {
 					node.left.phpKind = 'variable';
 				}
-				code += 'isset( ' + generatePhp( node.left ) + ' ) ? ';
+				code += '! empty( ' + generatePhp( node.left ) + ' ) ? ';
 				code += generatePhp( node.left ) + ' : ';
 				code += generatePhp( node.right );
 			}
