@@ -19,13 +19,15 @@ function generatePhp( node ) {
 		case 'ClassMethod':
 			code += `public function ${ node.key.name }(${ node.params.map( generatePhp ).join( ',' ) })`;
 			break;
-		case 'Identifier':
+		case 'Identifier': {
+			const name = node.name === 'React' ? '\\Prometheus\\React' : node.name;
 			if ( node.phpKind === 'variable' ) {
-				code += '$' + node.name;
+				code += '$' + name;
 			} else {
-				code += node.name;
+				code += name;
 			}
 			break;
+		}
 		case 'VariableDeclarator':
 			code += generatePhp( node.id );
 			code += ' = ';
@@ -41,7 +43,11 @@ function generatePhp( node ) {
 			break;
 		case 'MemberExpression':
 			code += generatePhp( node.object );
-			code += '->';
+			if ( node.phpKind === 'ClassExpression' ) {
+				code += '::';
+			} else {
+				code += '->';
+			}
 			code += generatePhp( node.property );
 			break;
 		case 'StringLiteral':
@@ -108,9 +114,7 @@ function generatePhp( node ) {
 }
 
 function outputNode( node ) {
-	//const json = JSON.stringify( node, null, 2 );
 	const generated = generatePhp( node );
-	//console.log( json, '\n' );
 	console.log( '-------\n' );
 	console.log( generated, '\n' );
 	console.log( '-------\n' );
@@ -147,14 +151,15 @@ const visitor = function() {
 						return Object.assign( param, { phpKind: 'variable' } );
 					} );
 				},
-
-				exit() {
-				}
 			},
 
 			MemberExpression: {
 				enter( path ) {
 					path.node.object.phpKind = 'variable';
+					if ( path.node.object.name && path.node.object.name[ 0 ].toUpperCase() === path.node.object.name[ 0 ] ) {
+						path.node.phpKind = 'ClassExpression';
+						path.node.object.phpKind = 'class';
+					}
 				}
 			},
 
