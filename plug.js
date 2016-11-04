@@ -55,14 +55,6 @@ function generatePhp( jsNode ) {
 			break;
 	}
 
-	//if ( node.body ) {
-		//if ( Array.isArray( node.body ) ) {
-			//code += node.body.map( generatePhp ).join( '' );
-		//} else {
-			//code += generatePhp( node.body );
-		//}
-	//}
-
 	if ( jsNode.body ) {
 		if ( Array.isArray( jsNode.body ) ) {
 			code += jsNode.body.map( generatePhp ).join( '' );
@@ -152,13 +144,6 @@ module.exports = function() {
 	return {
 		visitor: {
 			Program: {
-				enter( path ) {
-					path.node.php = {
-						type: 'Program',
-						body: [],
-					};
-				},
-
 				exit( path ) {
 					outputNode( path.node );
 				}
