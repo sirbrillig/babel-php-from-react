@@ -96,7 +96,7 @@ function generatePhp( node ) {
 	switch ( node.type ) {
 		case 'ClassBody':
 		case 'BlockStatement':
-			code += '\n}';
+			code += '}\n';
 			break;
 		case 'CallExpression':
 			code += ')';
