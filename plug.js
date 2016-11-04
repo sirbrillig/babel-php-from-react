@@ -1,42 +1,15 @@
 /* global module, console */
-const currentNodes = [];
-
-function getCurrentNode() {
-	return currentNodes[ currentNodes.length - 1 ];
-}
-
-function setCurrentNode( node ) {
-	if ( ! node.type ) {
-		throw new Error( 'setCurrentNode() requires a node with a type' );
-	}
-	if ( ! node.body || ! Array.isArray( node.body ) ) {
-		throw new Error( 'setCurrentNode() must be called with node that accepts a body array' );
-	}
-	currentNodes.push( node );
-}
-
-function addToCurrentNode( node ) {
-	if ( ! node.type ) {
-		throw new Error( 'addToCurrentNode() requires a node with a type' );
-	}
-	const currentNode = getCurrentNode();
-	currentNode.body.push( node );
-}
-
-function leaveCurrentNode() {
-	currentNodes.pop();
-}
-
-function generatePhp( node ) {
+function generatePhp( jsNode ) {
+	console.log( 'processing node', jsNode.type );
 	let code = '';
-	switch ( node.type ) {
+	switch ( jsNode.type ) {
 		case 'Program':
 			code += '<?php\n';
 			break;
-		case 'Class':
-			code += `class ${ node.id.name }`;
-			if ( node.superClass ) {
-				code += ` extends ${ node.superClass.name }`;
+		case 'ClassDeclaration':
+			code += `class ${ jsNode.id.name }`;
+			if ( jsNode.superClass ) {
+				code += ` extends ${ jsNode.superClass.name }`;
 			}
 			break;
 		case 'ClassBody':
@@ -44,43 +17,65 @@ function generatePhp( node ) {
 			code += ' {\n';
 			break;
 		case 'ClassMethod':
-			code += `public function ${ node.key.name }(${ node.params.map( generatePhp ).join( ',' ) })`;
+			code += `public function ${ jsNode.key.name }(${ jsNode.params.map( generatePhp ).join( ',' ) })`;
 			break;
 		case 'Identifier':
-			if ( node.kind === 'variable' ) {
-				code += '$' + node.name;
+			if ( jsNode.phpKind === 'variable' ) {
+				code += '$' + jsNode.name;
 			} else {
-				code += node.name;
+				code += jsNode.name;
 			}
 			break;
 		case 'VariableDeclarator':
-			code += generatePhp( node.id );
+			code += generatePhp( jsNode.id );
 			code += ' = ';
-			if ( node.init ) {
-				code += generatePhp( node.init );
+			if ( jsNode.init ) {
+				code += generatePhp( jsNode.init );
 			} else {
 				code += 'null';
 			}
 			code += ';';
 			break;
 		case 'MemberExpression':
-			code += generatePhp( node.object );
+			code += generatePhp( jsNode.object );
 			code += '->';
-			code += generatePhp( node.property );
+			code += generatePhp( jsNode.property );
 			break;
 		case 'StringLiteral':
 			// TODO: look out for quotes
-			code += `'${ node.value }'`;
+			code += `'${ jsNode.value }'`;
+			break;
+		case 'LogicalExpression':
+			if ( jsNode.operator === '||' ) {
+				// TODO: what if the left side is not a variable?
+				code += 'isset( ' + generatePhp( jsNode.left ) + ' ) ? ';
+				code += generatePhp( jsNode.left ) + ' : ';
+				code += generatePhp( jsNode.right );
+			}
 			break;
 	}
-	if ( node.body ) {
-		if ( Array.isArray( node.body ) ) {
-			code += node.body.map( generatePhp ).join( '' );
+
+	//if ( node.body ) {
+		//if ( Array.isArray( node.body ) ) {
+			//code += node.body.map( generatePhp ).join( '' );
+		//} else {
+			//code += generatePhp( node.body );
+		//}
+	//}
+
+	if ( jsNode.body ) {
+		if ( Array.isArray( jsNode.body ) ) {
+			code += jsNode.body.map( generatePhp ).join( '' );
 		} else {
-			code += generatePhp( node.body );
+			code += generatePhp( jsNode.body );
 		}
 	}
-	switch ( node.type ) {
+
+	if ( jsNode.declarations ) {
+		code += jsNode.declarations.map( generatePhp ).join( '' );
+	}
+
+	switch ( jsNode.type ) {
 		case 'ClassBody':
 		case 'BlockStatement':
 			code += '\n}';
@@ -90,10 +85,12 @@ function generatePhp( node ) {
 }
 
 function outputNode( node ) {
-	const json = JSON.stringify( node, null, 2 );
+	//const json = JSON.stringify( node, null, 2 );
 	const generated = generatePhp( node );
-	console.log( json, '\n' );
+	//console.log( json, '\n' );
+	console.log( '-------\n' );
 	console.log( generated, '\n' );
+	console.log( '-------\n' );
 }
 
 const getExpressionVisitor = function() {
@@ -155,90 +152,38 @@ module.exports = function() {
 	return {
 		visitor: {
 			Program: {
-				enter() {
-					const phpNode = {
+				enter( path ) {
+					path.node.php = {
 						type: 'Program',
 						body: [],
 					};
-					setCurrentNode( phpNode );
 				},
 
-				exit() {
-					const currentNode = getCurrentNode();
-					leaveCurrentNode();
-					outputNode( currentNode );
-				}
-			},
-
-			Class: {
-				enter( path ) {
-					const classNode = {
-						type: 'Identifier',
-						name: path.node.id.name,
-					};
-					const superClassNode = {
-						type: 'Identifier',
-						name: path.node.superClass.name,
-					};
-					const bodyNode = {
-						type: 'ClassBody',
-						body: [],
-					};
-					const phpNode = {
-						type: 'Class',
-						id: classNode,
-						superClass: superClassNode,
-						body: bodyNode,
-					};
-					addToCurrentNode( phpNode );
-					setCurrentNode( bodyNode );
-				},
-
-				exit() {
-					leaveCurrentNode();
+				exit( path ) {
+					outputNode( path.node );
 				}
 			},
 
 			ClassMethod: {
 				enter( path ) {
-					const methodNode = {
-						type: 'ClassMethod',
-						key: {
-							type: 'Identifier',
-							name: path.node.key.name,
-						},
-						params: path.node.params.map( param => ( {
-							type: 'Identifier',
-							kind: 'variable',
-							name: param.name,
-						} ) ),
-						body: {
-							type: 'BlockStatement',
-							body: []
-						}
-					};
-					addToCurrentNode( methodNode );
-					setCurrentNode( methodNode.body );
+					path.node.params = path.node.params.map( param => {
+						return Object.assign( param, { phpKind: 'variable' } );
+					} );
 				},
 
 				exit() {
-					leaveCurrentNode();
+				}
+			},
+
+			MemberExpression: {
+				enter( path ) {
+					path.node.object.phpKind = 'variable';
 				}
 			},
 
 			VariableDeclarator: {
 				enter( path ) {
-					const node = {
-						type: 'VariableDeclarator',
-						id: {
-							type: 'Identifier',
-							kind: 'variable',
-							name: path.node.id.name,
-						},
-						init: {},
-					};
-					addToCurrentNode( node );
-					path.traverse( getExpressionVisitor(), { currentExpression: node, prop: 'init' } );
+					path.node.id.phpKind = 'variable';
 				}
 			},
 		}
