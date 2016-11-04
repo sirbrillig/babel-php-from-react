@@ -85,62 +85,7 @@ function outputNode( node ) {
 	console.log( '-------\n' );
 }
 
-const getExpressionVisitor = function() {
-	return {
-		LogicalExpression: {
-			enter( path ) {
-				const node = {
-					type: 'LogicalExpression',
-					operator: path.node.operator,
-					left: {},
-					right: {},
-				};
-				console.log( 'LogicalExpression 1', node );
-				path.get( 'left' ).traverse( getExpressionVisitor(), { currentExpression: node, prop: 'left' } );
-				console.log( 'LogicalExpression 2', node );
-				path.get( 'right' ).traverse( getExpressionVisitor(), { currentExpression: node, prop: 'right' } );
-				console.log( 'LogicalExpression 3', node );
-				this.currentExpression[ this.prop ] = node;
-				this.traverseComplete = true; // TODO: path.stop probably does the same thing
-			},
-		},
-
-		StringLiteral( path ) {
-			if ( this.traverseComplete ) {
-				return;
-			}
-			const node = {
-				type: 'StringLiteral',
-				value: path.node.value,
-			};
-			console.log( 'StringLiteral', node );
-			this.currentExpression[ this.prop ] = node;
-		},
-
-		MemberExpression( path ) {
-			if ( this.traverseComplete ) {
-				return;
-			}
-			const node = {
-				type: 'MemberExpression',
-				object: {
-					type: 'Identifier',
-					kind: 'variable',
-					name: path.node.object.name
-				},
-				property: {
-					type: 'Identifier',
-					kind: 'property',
-					name: path.node.property.name
-				},
-			};
-			console.log( 'MemberExpression', node );
-			this.currentExpression[ this.prop ] = node;
-		},
-	};
-};
-
-module.exports = function() {
+const visitor = function() {
 	return {
 		visitor: {
 			Program: {
@@ -174,3 +119,5 @@ module.exports = function() {
 		}
 	};
 };
+
+module.exports = visitor;
