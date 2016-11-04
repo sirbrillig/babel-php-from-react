@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
 
 class TextWidget extends Component {
-	render( props ) {
-		const text = props.text || 'This is a text widget with no data!';
+	render() {
+		const text = this.props.text || 'This is a text widget with no data!';
+		const className = this.props.className || '';
 		return (
-			<div className={ props.className }>
+			<div className={ className }>
 				{ text }
 			</div>
 		);
