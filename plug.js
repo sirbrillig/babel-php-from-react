@@ -19,15 +19,13 @@ function generatePhp( node ) {
 		case 'ClassMethod':
 			code += `public function ${ node.key.name }(${ node.params.map( generatePhp ).join( ',' ) })`;
 			break;
-		case 'Identifier': {
-			const name = node.name === 'React' ? '\\Prometheus\\React' : node.name;
+		case 'Identifier':
 			if ( node.phpKind === 'variable' ) {
-				code += '$' + name;
+				code += '$' + node.name;
 			} else {
-				code += name;
+				code += node.name;
 			}
 			break;
-		}
 		case 'VariableDeclarator':
 			code += generatePhp( node.id );
 			code += ' = ';
