@@ -129,44 +129,34 @@ const visitor = function() {
 				}
 			},
 
-			ObjectProperty: {
-				enter( path ) {
-					if ( path.node.value.type === 'Identifier' ) {
-						path.node.value.phpKind = 'variable';
-					}
+			ObjectProperty( path ) {
+				if ( path.node.value.type === 'Identifier' ) {
+					path.node.value.phpKind = 'variable';
 				}
 			},
 
-			CallExpression: {
-				enter( path ) {
-					path.node.arguments = path.node.arguments.map( param => {
-						return Object.assign( param, { phpKind: 'variable' } );
-					} );
+			CallExpression( path ) {
+				path.node.arguments = path.node.arguments.map( param => {
+					return Object.assign( param, { phpKind: 'variable' } );
+				} );
+			},
+
+			ClassMethod( path ) {
+				path.node.params = path.node.params.map( param => {
+					return Object.assign( param, { phpKind: 'variable' } );
+				} );
+			},
+
+			MemberExpression( path ) {
+				path.node.object.phpKind = 'variable';
+				if ( path.node.object.name && path.node.object.name[ 0 ].toUpperCase() === path.node.object.name[ 0 ] ) {
+					path.node.phpKind = 'ClassExpression';
+					path.node.object.phpKind = 'class';
 				}
 			},
 
-			ClassMethod: {
-				enter( path ) {
-					path.node.params = path.node.params.map( param => {
-						return Object.assign( param, { phpKind: 'variable' } );
-					} );
-				},
-			},
-
-			MemberExpression: {
-				enter( path ) {
-					path.node.object.phpKind = 'variable';
-					if ( path.node.object.name && path.node.object.name[ 0 ].toUpperCase() === path.node.object.name[ 0 ] ) {
-						path.node.phpKind = 'ClassExpression';
-						path.node.object.phpKind = 'class';
-					}
-				}
-			},
-
-			VariableDeclarator: {
-				enter( path ) {
-					path.node.id.phpKind = 'variable';
-				}
+			VariableDeclarator( path ) {
+				path.node.id.phpKind = 'variable';
 			},
 		}
 	};
