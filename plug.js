@@ -1,4 +1,6 @@
 /* global module, console */
+let destructuredProperties = null;
+
 function generatePhp( node ) {
 	console.log( 'processing node', node.type );
 	let code = '';
@@ -12,9 +14,21 @@ function generatePhp( node ) {
 				code += ` extends ${ node.superClass.name }`;
 			}
 			break;
+		case 'ObjectPattern':
+			node.phpDestructuredProperties = true;
+			destructuredProperties = node.properties.map( property => ( { key: property.key, value: property.value } ) );
+			code += '$props';
+			break;
+		case 'ArrowFunctionExpression':
+			code += `function(${ node.params.map( generatePhp ).join( ',' ) })`;
+			break;
 		case 'ClassBody':
 		case 'BlockStatement':
 			code += ' {\n';
+			if ( destructuredProperties ) {
+				code += destructuredProperties.map( property => `${ generatePhp( property.value ) } = $props->${ generatePhp( property.key ) };\n` ).join( '' );
+				destructuredProperties = null;
+			}
 			break;
 		case 'ClassMethod':
 			code += `public function ${ node.key.name }(${ node.params.map( generatePhp ).join( ',' ) })`;
@@ -55,6 +69,9 @@ function generatePhp( node ) {
 		case 'LogicalExpression':
 			if ( node.operator === '||' ) {
 				// TODO: what if the left side is not a variable?
+				if ( node.left.type === 'Identifier' && ! node.left.phpKind ) {
+					node.left.phpKind = 'variable';
+				}
 				code += 'isset( ' + generatePhp( node.left ) + ' ) ? ';
 				code += generatePhp( node.left ) + ' : ';
 				code += generatePhp( node.right );
@@ -92,14 +109,14 @@ function generatePhp( node ) {
 		code += node.arguments.map( generatePhp ).join( ',' );
 	}
 
-	if ( node.properties ) {
+	if ( node.properties && ! node.phpDestructuredProperties ) {
 		code += node.properties.map( generatePhp ).join( ',' );
 	}
 
 	switch ( node.type ) {
 		case 'ClassBody':
 		case 'BlockStatement':
-			code += '}\n';
+			code += '}';
 			break;
 		case 'CallExpression':
 			code += ')';
