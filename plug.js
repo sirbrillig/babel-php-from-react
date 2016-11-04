@@ -40,7 +40,6 @@ function generatePhp( node ) {
 			code += '$this';
 			break;
 		case 'MemberExpression':
-			console.log( node.object );
 			code += generatePhp( node.object );
 			code += '->';
 			code += generatePhp( node.property );
@@ -123,6 +122,14 @@ const visitor = function() {
 			Program: {
 				exit( path ) {
 					outputNode( path.node );
+				}
+			},
+
+			ObjectProperty: {
+				enter( path ) {
+					if ( path.node.value.type === 'Identifier' ) {
+						path.node.value.phpKind = 'variable';
+					}
 				}
 			},
 
