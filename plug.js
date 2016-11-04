@@ -1,15 +1,15 @@
 /* global module, console */
-function generatePhp( jsNode ) {
-	console.log( 'processing node', jsNode.type );
+function generatePhp( node ) {
+	console.log( 'processing node', node.type );
 	let code = '';
-	switch ( jsNode.type ) {
+	switch ( node.type ) {
 		case 'Program':
 			code += '<?php\n';
 			break;
 		case 'ClassDeclaration':
-			code += `class ${ jsNode.id.name }`;
-			if ( jsNode.superClass ) {
-				code += ` extends ${ jsNode.superClass.name }`;
+			code += `class ${ node.id.name }`;
+			if ( node.superClass ) {
+				code += ` extends ${ node.superClass.name }`;
 			}
 			break;
 		case 'ClassBody':
@@ -17,60 +17,89 @@ function generatePhp( jsNode ) {
 			code += ' {\n';
 			break;
 		case 'ClassMethod':
-			code += `public function ${ jsNode.key.name }(${ jsNode.params.map( generatePhp ).join( ',' ) })`;
+			code += `public function ${ node.key.name }(${ node.params.map( generatePhp ).join( ',' ) })`;
 			break;
 		case 'Identifier':
-			if ( jsNode.phpKind === 'variable' ) {
-				code += '$' + jsNode.name;
+			if ( node.phpKind === 'variable' ) {
+				code += '$' + node.name;
 			} else {
-				code += jsNode.name;
+				code += node.name;
 			}
 			break;
 		case 'VariableDeclarator':
-			code += generatePhp( jsNode.id );
+			code += generatePhp( node.id );
 			code += ' = ';
-			if ( jsNode.init ) {
-				code += generatePhp( jsNode.init );
+			if ( node.init ) {
+				code += generatePhp( node.init );
 			} else {
 				code += 'null';
 			}
-			code += ';';
+			code += ';\n';
 			break;
 		case 'MemberExpression':
-			code += generatePhp( jsNode.object );
+			code += generatePhp( node.object );
 			code += '->';
-			code += generatePhp( jsNode.property );
+			code += generatePhp( node.property );
 			break;
 		case 'StringLiteral':
 			// TODO: look out for quotes
-			code += `'${ jsNode.value }'`;
+			code += `'${ node.value }'`;
 			break;
 		case 'LogicalExpression':
-			if ( jsNode.operator === '||' ) {
+			if ( node.operator === '||' ) {
 				// TODO: what if the left side is not a variable?
-				code += 'isset( ' + generatePhp( jsNode.left ) + ' ) ? ';
-				code += generatePhp( jsNode.left ) + ' : ';
-				code += generatePhp( jsNode.right );
+				code += 'isset( ' + generatePhp( node.left ) + ' ) ? ';
+				code += generatePhp( node.left ) + ' : ';
+				code += generatePhp( node.right );
 			}
+			break;
+		case 'CallExpression':
+			code += generatePhp( node.callee ) + '(';
+			break;
+		case 'ReturnStatement':
+			code += 'return ';
+			code += generatePhp( node.argument );
+			code += ';\n';
+			break;
+		case 'ObjectExpression':
+			code += '[';
+			break;
+		case 'ObjectProperty':
+			console.log( node.key );
+			code += `'${ generatePhp( node.key ) }' => ${ generatePhp( node.value ) }`;
 			break;
 	}
 
-	if ( jsNode.body ) {
-		if ( Array.isArray( jsNode.body ) ) {
-			code += jsNode.body.map( generatePhp ).join( '' );
+	if ( node.body ) {
+		if ( Array.isArray( node.body ) ) {
+			code += node.body.map( generatePhp ).join( '' );
 		} else {
-			code += generatePhp( jsNode.body );
+			code += generatePhp( node.body );
 		}
 	}
 
-	if ( jsNode.declarations ) {
-		code += jsNode.declarations.map( generatePhp ).join( '' );
+	if ( node.declarations ) {
+		code += node.declarations.map( generatePhp ).join( '' );
 	}
 
-	switch ( jsNode.type ) {
+	if ( node.arguments ) {
+		code += node.arguments.map( generatePhp ).join( ',' );
+	}
+
+	if ( node.properties ) {
+		code += node.properties.map( generatePhp ).join( ',' );
+	}
+
+	switch ( node.type ) {
 		case 'ClassBody':
 		case 'BlockStatement':
 			code += '\n}';
+			break;
+		case 'CallExpression':
+			code += ')';
+			break;
+		case 'ObjectExpression':
+			code += ']';
 			break;
 	}
 	return code;
@@ -91,6 +120,14 @@ const visitor = function() {
 			Program: {
 				exit( path ) {
 					outputNode( path.node );
+				}
+			},
+
+			CallExpression: {
+				enter( path ) {
+					path.node.arguments = path.node.arguments.map( param => {
+						return Object.assign( param, { phpKind: 'variable' } );
+					} );
 				}
 			},
 
