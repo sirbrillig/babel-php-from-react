@@ -36,7 +36,11 @@ function generatePhp( node ) {
 			}
 			code += ';\n';
 			break;
+		case 'ThisExpression':
+			code += '$this';
+			break;
 		case 'MemberExpression':
+			console.log( node.object );
 			code += generatePhp( node.object );
 			code += '->';
 			code += generatePhp( node.property );
@@ -65,7 +69,6 @@ function generatePhp( node ) {
 			code += '[';
 			break;
 		case 'ObjectProperty':
-			console.log( node.key );
 			code += `'${ generatePhp( node.key ) }' => ${ generatePhp( node.value ) }`;
 			break;
 	}
