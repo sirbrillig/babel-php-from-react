@@ -145,7 +145,7 @@ function outputPhp( php, sourceFilePath ) {
 	const sourceFileDir = nodePath.dirname( sourceFilePath );
 	const outFileName = nodePath.basename( sourceFilePath, '.js' ) + '.php';
 	const outFilePath = nodePath.join( sourceFileDir, outFileName );
-	fs.writeFile( outFilePath, php );
+	fs.writeFile( outFilePath, php + '\n' );
 }
 
 const visitor = function() {
