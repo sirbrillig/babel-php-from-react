@@ -1,5 +1,5 @@
 /* global module, require */
-const nodePath = require( 'path' );
+const { basename, dirname, join } = require( 'path' );
 const fs = require( 'fs' );
 
 let destructuredProperties = null;
@@ -142,9 +142,10 @@ function generatePhp( node ) {
 }
 
 function outputPhp( php, sourceFilePath ) {
-	const sourceFileDir = nodePath.dirname( sourceFilePath );
-	const outFileName = nodePath.basename( sourceFilePath, '.js' ) + '.php';
-	const outFilePath = nodePath.join( sourceFileDir, outFileName );
+	const sourceFileDir = dirname( sourceFilePath );
+	const sourceFileName = basename( sourceFilePath, '.js' );
+	const outFileName = ( sourceFileName === 'index' ? basename( sourceFileDir ) : sourceFileName ) + '.php';
+	const outFilePath = join( sourceFileDir, outFileName );
 	fs.writeFile( outFilePath, php + '\n' );
 }
 
