@@ -1,9 +1,11 @@
-/* global module, console */
+/* global module, require */
+const nodePath = require( 'path' );
+const fs = require( 'fs' );
+
 let destructuredProperties = null;
 let functionName = null;
 
 function generatePhp( node ) {
-	console.log( 'processing node', node.type );
 	let code = '';
 	switch ( node.type ) {
 		case 'Program':
@@ -139,19 +141,19 @@ function generatePhp( node ) {
 	return code;
 }
 
-function outputNode( node ) {
-	const generated = generatePhp( node );
-	console.log( '-------\n' );
-	console.log( generated, '\n' );
-	console.log( '-------\n' );
+function outputPhp( php, sourceFilePath ) {
+	const sourceFileDir = nodePath.dirname( sourceFilePath );
+	const outFileName = nodePath.basename( sourceFilePath, '.js' ) + '.php';
+	const outFilePath = nodePath.join( sourceFileDir, outFileName );
+	fs.writeFile( outFilePath, php );
 }
 
 const visitor = function() {
 	return {
 		visitor: {
 			Program: {
-				exit( path ) {
-					outputNode( path.node );
+				exit( path, state ) {
+					outputPhp( generatePhp( path.node ), state.file.opts.filename );
 				}
 			},
 
