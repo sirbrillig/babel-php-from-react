@@ -1,12 +1,12 @@
 {
-  "name": "babel-plugin-test",
+  "name": "babel-php-from-react",
   "version": "1.0.0",
-  "description": "",
+  "description": "Transform React components into adjacent PHP files",
   "main": "index.js",
   "scripts": {
     "test": "babel input.js"
   },
-  "author": "",
+  "author": "Payton Swick <payton@foolord.com>",
   "license": "ISC",
   "dependencies": {
     "babel-cli": "^6.16.0",

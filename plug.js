@@ -5,11 +5,14 @@ const fs = require( 'fs' );
 let destructuredProperties = null;
 let functionName = null;
 
-function generatePhp( node ) {
+function generatePhp( node, options = {} ) {
 	let code = '';
 	switch ( node.type ) {
 		case 'Program':
 			code += '<?php\n';
+			if ( options.namespace ) {
+				code += `namespace ${ options.namespace };\n`;
+			}
 			break;
 		case 'ClassDeclaration':
 			code += `class ${ node.id.name }`;
@@ -154,7 +157,7 @@ const visitor = function() {
 		visitor: {
 			Program: {
 				exit( path, state ) {
-					outputPhp( generatePhp( path.node ), state.file.opts.filename );
+					outputPhp( generatePhp( path.node, state.opts ), state.file.opts.filename );
 				}
 			},
 
