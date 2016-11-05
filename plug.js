@@ -144,7 +144,7 @@ function generatePhp( node ) {
 function outputPhp( php, sourceFilePath ) {
 	const sourceFileDir = dirname( sourceFilePath );
 	const sourceFileName = basename( sourceFilePath, '.js' );
-	const outFileName = ( sourceFileName === 'index' ? basename( sourceFileDir ) : sourceFileName ) + '.php';
+	const outFileName = sourceFileName + '.php';
 	const outFilePath = join( sourceFileDir, outFileName );
 	fs.writeFile( outFilePath, php + '\n' );
 }
